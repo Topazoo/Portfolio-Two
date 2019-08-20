@@ -1,0 +1,8 @@
+portfolio/.env
+resources/
+db.sqlite3
+migrations/
+venv/
+.vscode/
+logs/
+__pycache__
