@@ -1,28 +1,29 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-import logging
-
-logger = logging.getLogger('console')
+from . import logger
 
 def GET(request):
     if request.method != 'GET' or 'model' not in request.GET or 'filter' not in request.GET:
         if 'model' not in request.GET:
-            logger.error('API ERROR - GET: No model supplied in query parameters!')
+            logger.error('GET - No model supplied in query parameters!')
         if 'filter' not in request.GET:
-            logger.error('API ERROR - GET: No model filter supplied in query parameters!')
+            logger.error('GET - No model filter supplied in query parameters!')
         
-        return JsonResponse({}, status=400)
-    
-    model = request.GET['model'] 
-    model_filter = request.GET['filter'] 
+        return JsonResponse({'model': {}, 'code': 400}, status=400)
 
     try:
-        model = {'model': {}}  # TODO - GET MODEL AND ADD TO JSON
-        return JsonResponse(model, status=200)
+        response = {'model':{}, 'code': 200}
+
+        model = request.GET['model'] 
+        model_filter = request.GET['filter'] 
+
+        # TODO - GET MODEL AND ADD TO JSON
+
+        return JsonResponse(response, status=200)
 
     except Exception as e:
-        logger.error('API ERROR - GET: {}'.format(str(e)))
-        return JsonResponse({}, status=404)
+        logger.error('GET - {}'.format(str(e)))
+        return JsonResponse({'model': {}, 'code': 404}, status=404)
 
 
     
