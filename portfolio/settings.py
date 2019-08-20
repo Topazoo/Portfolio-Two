@@ -118,15 +118,25 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'handlers': {
-        'file': {
+        'console_handler': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'logs/console.log'),
         },
+        'api_handler': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs/api.log'),
+        },
     },
     'loggers': {
         'console': {
-            'handlers': ['file'],
+            'handlers': ['console_handler'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'api': {
+            'handlers': ['api_handler'],
             'level': 'INFO',
             'propagate': True,
         },
