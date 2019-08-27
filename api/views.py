@@ -1,27 +1,36 @@
 from django.shortcuts import render
 from django.http import QueryDict
 from .utilities import api_response, log_error, handle_unsupported_method
+from .api_models import api_models
 import json
 
 def GET(request):
     error_msg = ''
 
-    if 'model' not in request.GET or 'filter' not in request.GET:
-        if 'model' not in request.GET:
-            error_msg = 'GET - No model supplied in query parameters! (param: model)'
-        elif 'filter' not in request.GET:
-            error_msg = 'GET - No model filter supplied in query parameters! (param: filter)'
+    if 'model' not in request.GET:
+        error_msg = 'GET - No model supplied in query parameters! (param: model)'
         
         log_error(error_msg)
         return api_response({'msg': error_msg})
 
     try:
         model = request.GET['model'] 
-        model_filter = request.GET['filter'] 
+        model_filter = request.GET.get('filter', None) 
         model_sort = request.GET.get('sort', None)
 
-        model_obj = {} # TODO - GET MODEL AND ADD TO JSON
-        return api_response({'model': model_obj}, 200)
+        if model not in api_models:
+            raise Exception('Model not found: {}'.format(model))
+
+        model = api_models[model]
+
+        if 'GET' not in model.supported_methods:
+            raise Exception('Method not supported.')
+
+        if not model_filter:
+            models = [model.to_json() for model in model.objects.all()]
+            return api_response({'models': models}, 200)
+
+        # TODO - ADD FILTER SUPPORT
 
     except Exception as e:
         error_msg = 'GET - {}'.format(str(e))
@@ -123,3 +132,4 @@ def http_dispatch(request):
     log_error(error_msg)
     return api_response({'msg': error_msg})
     
+
