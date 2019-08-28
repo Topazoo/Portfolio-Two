@@ -22,24 +22,19 @@ def GET(request):
         if 'GET' not in model.supported_methods:
             raise API_Error('Method not supported for model: \'{}\''.format(model_name), 400)
 
-        if not model_filter:
-            models = [model.to_json() for model in model.objects.all()]
-            return api_response({'models': models}, 200)
+        if model_filter:
+            filter_params = parse_query_pairs(model_filter)
+            validate_fields([param for param in filter_params], model)
+            models = model.objects.filter(**filter_params)
 
         else:
-            filter_params = model_filter.split(':')
+            models = model.objects.all()
 
-            if len(filter_params) != 2:
-                raise API_Error('Malformatted filter. Format: field:value', 400)
+        if model_sort:
+            sort_params = parse_query_params(model_sort)
+            models = models.order_by(*sort_params)
 
-            if filter_params[0] not in [field.name for field in model._meta.fields]:
-                raise API_Error('Field \'{}\' not found for model: \'{}\''.format(filter_params[0], model_name), 400)
-
-            models = [model.to_json() for model in model.objects.filter(**{filter_params[0]: filter_params[1]})]
-
-            return api_response({'models': models}, 200)
-            
-        # TODO - ADD SORT SUPPORT
+        return api_response({'models': [model.to_json() for model in models]}, 200 if len(models) > 0 else 404)
     
     except Exception as e:
         error_msg = 'GET - {}'.format(str(e)) 
