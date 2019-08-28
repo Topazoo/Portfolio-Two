@@ -2,7 +2,6 @@ from django.shortcuts import render
 from django.http import QueryDict
 from .utilities import *
 from .errors import *
-from .api_models import api_models
 import json, ast
 
 #from django.views.decorators.csrf import csrf_exempt # TODO - Remove (DEBUG)
@@ -16,10 +15,9 @@ def GET(request):
         model_filter = request.GET.get('filter', None) 
         model_sort = request.GET.get('sort', None)
 
-        if model_name not in api_models:
+        model = get_model(model_name)
+        if not model:
             raise API_Error('Model not found: \'{}\''.format(model_name), 404)
-
-        model = api_models[model_name]
 
         if 'GET' not in model.supported_methods:
             raise API_Error('Method not supported for model: \'{}\''.format(model_name), 400)
@@ -63,10 +61,9 @@ def POST(request):
         model_name = request.POST['model'] 
         model_attrs = request.POST.get('model_attrs', None)
 
-        if model_name not in api_models:
+        model = get_model(model_name)
+        if not model:
             raise API_Error('Model not found: \'{}\''.format(model_name), 404)
-
-        model = api_models[model_name]
 
         if 'POST' not in model.supported_methods:
             raise API_Error('Method not supported for model: \'{}\''.format(model_name), 400)
@@ -111,10 +108,9 @@ def PUT(request):
         model_id = request.POST['model_id'] 
         model_attrs = request.POST['model_attrs'] 
 
-        if model_name not in api_models:
+        model = get_model(model_name)
+        if not model:
             raise API_Error('Model not found: \'{}\''.format(model_name), 404)
-
-        model = api_models[model_name]
 
         if 'PUT' not in model.supported_methods:
             raise API_Error('Method not supported for model: \'{}\''.format(model_name), 400)
@@ -146,10 +142,9 @@ def DELETE(request):
         model_name = request.POST['model'] 
         model_filter = request.POST['model_id'] 
 
-        if model_name not in api_models:
+        model = get_model(model_name)
+        if not model:
             raise API_Error('Model not found: \'{}\''.format(model_name), 404)
-
-        model = api_models[model_name]
 
         if 'DELETE' not in model.supported_methods:
             raise API_Error('Method not supported for model: \'{}\''.format(model_name), 400)
@@ -166,6 +161,7 @@ def DELETE(request):
 
         return api_response({'msg': error_msg}, 500)
 
+#@csrf_exempt # TODO - Remove (DEBUG)
 def http_dispatch(request):
 
     if request.method == 'GET':

@@ -1,17 +1,18 @@
 
 from django.http import JsonResponse
 from django.conf import settings
+from django.apps import apps
 from .errors import API_Error
 import logging, json
 
 def api_response(content = {}, code = 400):
     ''' Format an API JSON response.
 
-        @content (dict) - A dictionary of JSON serializable objects to return.
+        --> (dict) content : A dictionary of JSON serializable objects to return. Optional.
         
-        @code (int) - The HTTP status code to return 
+        --> (int) code : The HTTP status code to return. Optional.
         
-        Returns: (JsonResponse): {<<content>>, code: <<code>> }
+        <-- (JsonResponse) : The JSON formatted response. { <<content>>, "code": <<code>> }
     '''
 
     content['code'] = code
@@ -20,7 +21,7 @@ def api_response(content = {}, code = 400):
 def log_error(message):
     ''' Logs an API error to /logs/api.log if LOG_ERRORS is True in settings.
 
-        @message (string) - The message to log
+        --> (string) message : The message to log.
     '''
 
     if settings.DEBUG:
@@ -32,7 +33,7 @@ def handle_unsupported_method(request):
         Decodes the body of the request object and adds it to the request's POST
         field.
 
-        @request (Django HttpRequest) - The request sent to the API
+        --> (HttpRequest) request : The request sent to the API.
      '''
 
     if len(request.body) > 2:
@@ -40,10 +41,11 @@ def handle_unsupported_method(request):
         request.POST.update(json.loads(request.body.decode('utf-8').replace('\'', '\"')))
 
 def validate_fields(fields, model):
-    ''' Ensure that the model fields passed to an API call exist for that model
+    ''' Ensure that the model fields passed to an API call exist for that model.
     
-        @fields (dict || list) - The fields passed to the request
-        @model (API_Model) - A model derived from the base class defined in api/models.py
+        --> (dict || list) fields : The fields passed to the request.
+        
+        --> (API_Model) model : A model derived from the base class defined in api/models.py.
     '''
     
     model_fields = [field.name for field in model._meta.fields]
@@ -54,12 +56,12 @@ def validate_fields(fields, model):
 
 
 def parse_query_pairs(payload):
-    ''' Parse out one or more key/value pairs from a query string.
-        (e.g. /api/?param=key:value || /api/?param=key1:value1+key2:value2)
+    ''' Parse out one or more key/value pairs from a query string
+        (e.g. /api/?param=key:value || /api/?param=key1:value1+key2:value2).
     
-        @payload (str) - The arguments supplied with the parameter (The key value pairs in string form)
+        --> (str) payload : The arguments supplied with the parameter (The key value pairs in string form).
 
-        Returns (dict) - A dictionary of the parsed key/value pairs 
+        <-- (dict) : The parsed key/value pairs.
     '''
 
     pairs = {}
@@ -67,3 +69,20 @@ def parse_query_pairs(payload):
         pairs[pair_tuple[0]] = pair_tuple[1]
 
     return pairs
+
+def get_model(model_name):
+    ''' Fetches a model type using a string. Allows far more Django model manager and 
+        property access using a passed string.
+    
+        --> (str) model_name : The name of the model class to retrieve.
+
+        <-- (type<API_Model> || None) : The actual class type with access to model methods. None if not found.
+    '''
+    
+    try:
+        norm_name = '_'.join([chunk.upper() for chunk in model_name.split('_')])
+
+        return apps.get_model('api', norm_name)
+    
+    except LookupError as e:
+        return None
