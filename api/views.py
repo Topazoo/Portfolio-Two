@@ -1,9 +1,11 @@
 from django.shortcuts import render
 from django.http import QueryDict
-from .utilities import api_response, log_error, handle_unsupported_method
-from .errors import API_Error
+from .utilities import *
+from .errors import *
 from .api_models import api_models
 import json, ast
+
+#from django.views.decorators.csrf import csrf_exempt # TODO - Remove (DEBUG)
 
 def GET(request):
     try:
@@ -51,6 +53,9 @@ def GET(request):
         return api_response({'msg': error_msg}, 500)
 
 def POST(request):
+    if len(request.POST) == 0:
+        handle_unsupported_method(request)
+
     try:
         if 'model' not in request.POST:
             raise API_Error('No model supplied in POST body! (param: model)', 400)
@@ -66,7 +71,17 @@ def POST(request):
         if 'POST' not in model.supported_methods:
             raise API_Error('Method not supported for model: \'{}\''.format(model_name), 400)
 
-        #TODO - Create the model with specified attributes
+        if model_attrs:
+            if type(model_attrs) == str:
+                model_attrs = parse_query_pairs(model_attrs)
+            
+            validate_fields([attr for attr in model_attrs], model)
+
+            model(**model_attrs).save()
+        
+        else:
+            model().save()
+            
         return api_response(code=200)
 
     except Exception as e:

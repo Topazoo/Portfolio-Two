@@ -2,7 +2,7 @@ from django.db import models
 import django.db.models.fields as field_types
 import json
 
-class Base_API_Model(models.Model):
+class API_Model(models.Model):
     supported_methods = ['GET']
 
     name = models.CharField(max_length=255, blank=True)
@@ -29,8 +29,8 @@ class Base_API_Model(models.Model):
 
         return json.dumps(attrs_map)
 
-class Category(Base_API_Model):
+class Category(API_Model):
     pass
 
-class Project(Base_API_Model):
+class Project(API_Model):
     project_category = models.ForeignKey(Category, on_delete=models.CASCADE)
