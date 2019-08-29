@@ -4,8 +4,6 @@ from .utilities import *
 from .errors import *
 import json
 
-from django.views.decorators.csrf import csrf_exempt # TODO - Remove (DEBUG)
-
 def GET(request: HttpRequest) -> JsonResponse:
     ''' Fetch model data from the server or respond with the appropriate HTTP status code on error. 
     
@@ -157,7 +155,6 @@ def DELETE(request: HttpRequest) -> JsonResponse:
     except Exception as exception:
         return api_error_response('DELETE', exception)
 
-@csrf_exempt # TODO - Remove (DEBUG)
 def api(request: HttpRequest) -> JsonResponse:
     ''' Called when the /api/ endpoint is sent an HTTP request. Delegates 
         to the appropriate handler based on the request method or returns a JSON

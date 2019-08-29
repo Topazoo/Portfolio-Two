@@ -1,7 +1,14 @@
 from django.test import TestCase, Client
+from django.db import models
+from .models import API_Model
 
 client = Client(HTTP_USER_AGENT='Mozilla/5.0')
-
+# TODO - UPDATE
+class Test_Model(API_Model):
+    _str = models.CharField(max_length=255, blank=True)
+    _bool = models.BooleanField(default=False)
+    _rel = models.ForeignKey(API_Model, on_delete=models.CASCADE)
+    
 class API_Test(TestCase):
     _method = None  # VIRTUAL: OVERRIDE FOR SPECIFIC METHOD TESTS
 
