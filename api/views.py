@@ -1,173 +1,171 @@
 from django.shortcuts import render
-from django.http import QueryDict
+from django.http import HttpRequest, JsonResponse, QueryDict
 from .utilities import *
 from .errors import *
-from .api_models import api_models
-import json, ast
+import json
 
-#from django.views.decorators.csrf import csrf_exempt # TODO - Remove (DEBUG)
-
-def GET(request):
-    try:
-        if 'model' not in request.GET:
-            raise API_Error('No model supplied in query parameters! (param: model)', 400)
-
-        model_name = request.GET['model'] 
-        model_filter = request.GET.get('filter', None) 
-        model_sort = request.GET.get('sort', None)
-
-        if model_name not in api_models:
-            raise API_Error('Model not found: \'{}\''.format(model_name), 404)
-
-        model = api_models[model_name]
-
-        if 'GET' not in model.supported_methods:
-            raise API_Error('Method not supported for model: \'{}\''.format(model_name), 400)
-
-        if not model_filter:
-            models = [model.to_json() for model in model.objects.all()]
-            return api_response({'models': models}, 200)
-
-        else:
-            filter_params = model_filter.split(':')
-
-            if len(filter_params) != 2:
-                raise API_Error('Malformatted filter. Format: field:value', 400)
-
-            if filter_params[0] not in [field.name for field in model._meta.fields]:
-                raise API_Error('Field \'{}\' not found for model: \'{}\''.format(filter_params[0], model_name), 400)
-
-            models = [model.to_json() for model in model.objects.filter(**{filter_params[0]: filter_params[1]})]
-
-            return api_response({'models': models}, 200)
-            
-        # TODO - ADD SORT SUPPORT
+def GET(request: HttpRequest) -> JsonResponse:
+    ''' Fetch model data from the server or respond with the appropriate HTTP status code on error. 
     
-    except Exception as e:
-        error_msg = 'GET - {}'.format(str(e)) 
-        log_error(error_msg)
+        The request query string must supply the model's (class) name. It may also supply one or more optional 
+        filter and sort parameters matching the parameters for Django's filter() and order_by() Queryset methods:
+        https://docs.djangoproject.com/en/2.2/ref/models/querysets/#field-lookups
+        https://docs.djangoproject.com/en/2.2/ref/models/querysets/#order-by
 
-        if type(e) == API_Error:
-            return api_response({'msg': error_msg}, e.code)
+        --> request : The GET request sent to the server.
 
-        return api_response({'msg': error_msg}, 500)
+        <-- JSON containing the HTTP status code signifying the request's success or failure and
+            a list of models matching the supplied parameters if the request did not fail.
 
-def POST(request):
-    if len(request.POST) == 0:
+            GET Request Formats:
+                All - Get all models.
+                    /api/?model=<<model>>
+                    
+                Filtering - Get all models of type (class) <<model>> with field(s) matching the provided value(s).
+                    /api/?model=<<model>>&filter=<<field>>:<<value>>
+                    /api/?model=<<model>>&filter=<<field1>>:<<value1>>,<<field2>>:<<value2>>
+                                                                        
+                Sorting - Get all models of type (class) <<model>> sorted by the provieded field(s). 
+                    /api/?model=<<model>>&sort=<<field>>
+                    /api/?model=<<model>>&sort=<<field1>>,<<field2>>
+
+                Filtering + Sorting - Get all models of type (class) <<model>> with field(s) matching the provided 
+                                      value(s) sorted by the provided field(s).
+                    
+                    /api/?model=<<model>>&filter=<<field1>>,<<field2>>:<<value>>&sort=<<field1>> 
+
+            GET Response Format:
+                {"models": [models], "code": <<code>>}            
+    '''
+    
+    try:
+        model_type = fetch_model_type('GET', request.GET)
+        filtered_models = fetch_and_filter_models(model_type, request.GET)
+        sorted_models = sort_models(model_type, filtered_models, request.GET)
+
+        return api_response({'models': [model.to_json() for model in sorted_models]}, 200 if len(sorted_models) > 0 else 404)
+    
+    except Exception as exception:
+        return api_error_response('GET', exception)
+
+
+def POST(request: HttpRequest) -> JsonResponse:
+    ''' Create a new model or respond with the appropriate HTTP status code on error. 
+        
+        The request body must supply the model's (class) name. It may also supply a dictionary of 
+        one or more field/value pairs to create the model with.
+
+        --> request : The POST request sent to the server.
+
+        <-- JSON containing the HTTP status code signifying the request's success or failure.
+
+            POST Body Formats:
+                Empty - Create a new <<model>> with all fields empty.
+                    {"model": <<model>>}
+
+                With Fields - Create a new <<model>> with the provided fields set.
+                    { "model": <<model>>, "fields": {<<field1>>: <<value1>>, <<field2>>: <<value2>>} }
+
+            POST Response Format:
+                {"code": <<code>>}            
+    '''
+
+    try:
+        if len(request.POST) == 0:
+            handle_unsupported_method(request)
+
+        model_type = fetch_model_type('POST', request.POST)
+        create_or_update_model(model_type, request_params=request.POST)
+
+        return api_response(code=200)
+
+    except Exception as exception:
+        return api_error_response('POST', exception)
+
+
+def PUT(request: HttpRequest) -> JsonResponse:
+    ''' Update a model or respond with the appropriate HTTP status code on error. 
+        
+        The request body must supply the model's (class) name and a dictionary of 
+        one or more field/value pairs to update the model with. It should also supply 
+        one or more optional filter parameters matching the parameters for Django's 
+        Queryset.filter() method. 
+        
+        *The filter parameters must match only the model being updated*
+        
+        --> request : The PUT request sent to the server.
+
+        <-- JSON containing the HTTP status code signifying the request's success or failure.
+
+            PUT Body Format:
+                { 
+                    "model": <<model>>, 
+                    "filter": {<<field1>>: <<value1>>, <<field2>>: <<value2>>},
+                    "fields": {<<field1>>: <<value1>>, <<field3>>: <<value3>>} 
+                }
+
+            PUT Response Format:
+                {"code": <<code>>}            
+    '''
+
+    try:
         handle_unsupported_method(request)
 
-    try:
-        if 'model' not in request.POST:
-            raise API_Error('No model supplied in POST body! (param: model)', 400)
+        model_type = fetch_model_type('PUT', request.POST)
+        model = fetch_and_filter_models(model_type, request.POST).get()
 
-        model_name = request.POST['model'] 
-        model_attrs = request.POST.get('model_attrs', None)
+        create_or_update_model(model_type, model, request.POST)
 
-        if model_name not in api_models:
-            raise API_Error('Model not found: \'{}\''.format(model_name), 404)
+        return api_response(code=200)
 
-        model = api_models[model_name]
+    except Exception as exception:
+        return api_error_response('PUT', exception)
 
-        if 'POST' not in model.supported_methods:
-            raise API_Error('Method not supported for model: \'{}\''.format(model_name), 400)
 
-        if model_attrs:
-            if type(model_attrs) == str:
-                model_attrs = parse_query_pairs(model_attrs)
-            
-            validate_fields([attr for attr in model_attrs], model)
-
-            model(**model_attrs).save()
+def DELETE(request: HttpRequest) -> JsonResponse:
+    ''' Delete a model or respond with the appropriate HTTP status code on error. 
         
-        else:
-            model().save()
-            
+        The request body must supply the model's (class) name. It should also supply 
+        one or more optional filter parameters (matching the parameters for Django's 
+        Queryset.filter() method). 
+        
+        *The filter parameters must match only a single model*
+        
+        --> request : The DELETE request sent to the server.
+
+        <-- JSON containing the HTTP status code signifying the request's success or failure.
+
+            DELETE Body Format:
+                { "model": <<model>>, "filter": {<<field1>>: <<value1>>, <<field2>>: <<value2>>} }
+
+            DELETE Response Format:
+                {"code": <<code>>}            
+    '''
+
+    try:
+        handle_unsupported_method(request)
+
+        model_type = fetch_model_type('DELETE', request.POST)
+        model = fetch_and_filter_models(model_type, request.POST).get()
+
+        model.delete()
+
         return api_response(code=200)
 
-    except Exception as e:
-        error_msg = 'POST - {}'.format(str(e)) 
-        log_error(error_msg)
+    except Exception as exception:
+        return api_error_response('DELETE', exception)
 
-        if type(e) == API_Error:
-            return api_response({'msg': error_msg}, e.code)
+def api(request: HttpRequest) -> JsonResponse:
+    ''' Called when the /api/ endpoint is sent an HTTP request. Delegates 
+        to the appropriate handler based on the request method or returns a JSON
+        formatted error if the method is not supported.
 
-        return api_response({'msg': error_msg}, 500)
+        --> request : The HTTP request sent to the server.
 
-def PUT(request):
-    handle_unsupported_method(request)
+        <-- JSON containing the HTTP status code signifying the request's success or failure and
+            all other data returned from the server.
+    '''
     
-    try:
-        if 'model' not in request.POST or 'model_id' not in request.POST or 'model_attrs' not in request.POST:
-            if 'model' not in request.POST:
-                error_msg = 'No model supplied in PUT body! (param: model)'
-            elif 'model_id' not in request.POST:
-                error_msg = 'No model ID supplied in PUT body! (param: model_id)'
-            elif 'model_attrs' not in request.POST:
-                error_msg = 'No attributes to update supplied in PUT body! (param: model_attrs)'
-            
-            raise API_Error(error_msg, 400)
-
-        model_name = request.POST['model'] 
-        model_id = request.POST['model_id'] 
-        model_attrs = request.POST['model_attrs'] 
-
-        if model_name not in api_models:
-            raise API_Error('Model not found: \'{}\''.format(model_name), 404)
-
-        model = api_models[model_name]
-
-        if 'PUT' not in model.supported_methods:
-            raise API_Error('Method not supported for model: \'{}\''.format(model_name), 400)
-
-        # TODO - Get model and replace attributes
-        return api_response(code=200)
-
-    except Exception as e:
-        error_msg = 'PUT - {}'.format(str(e)) 
-        log_error(error_msg)
-
-        if type(e) == API_Error:
-            return api_response({'msg': error_msg}, e.code)
-
-        return api_response({'msg': error_msg}, 500)
-
-def DELETE(request):
-    handle_unsupported_method(request)
-
-    try:
-        if 'model' not in request.POST or 'model_id' not in request.POST:
-            if 'model' not in request.POST:
-                error_msg = 'No model supplied in DELETE body! (param: model)'    
-            elif 'model_id' not in request.POST:
-                error_msg = 'No model ID supplied in DELETE body! (param: model_id)'
-            
-            raise API_Error(error_msg, 400)
-
-        model_name = request.POST['model'] 
-        model_filter = request.POST['model_id'] 
-
-        if model_name not in api_models:
-            raise API_Error('Model not found: \'{}\''.format(model_name), 404)
-
-        model = api_models[model_name]
-
-        if 'DELETE' not in model.supported_methods:
-            raise API_Error('Method not supported for model: \'{}\''.format(model_name), 400)
-
-        # TODO - DELETE MODEL
-        return api_response(code=200)
-
-    except Exception as e:
-        error_msg = 'DELETE - {}'.format(str(e)) 
-        log_error(error_msg)
-
-        if type(e) == API_Error:
-            return api_response({'msg': error_msg}, e.code)
-
-        return api_response({'msg': error_msg}, 500)
-
-def http_dispatch(request):
-
     if request.method == 'GET':
         return GET(request)
 
@@ -180,9 +178,4 @@ def http_dispatch(request):
     if request.method == 'DELETE':
         return DELETE(request)
 
-    error_msg = 'HTTP - Invalid method: {}'.format(request.method)
-
-    log_error(error_msg)
-    return api_response({'msg': error_msg})
-    
-
+    return api_error_response('HTTP', API_Error('Invalid method: {}'.format(request.method), 405))

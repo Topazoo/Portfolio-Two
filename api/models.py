@@ -1,25 +1,23 @@
 from django.db import models
-import django.db.models.fields as field_types
 import json
 
 class API_Model(models.Model):
-    supported_methods = ['GET']
+    ''' The base model for all models the API can interact with.
 
-    name = models.CharField(max_length=255, blank=True)
-
-    def __str__(self):
-        return str(self.name)
+        * @supported_methods can be overidden to restrict API interaction with a model to specific methods *
+    ''' 
     
-    def __repr__(self):
-        return '<{}: {}>'.format(self.__class__.__name__, self.__str__())
+    supported_methods = ['ALL']
 
     def to_json(self):
+        ''' Write all non-relational model data to JSON '''
+
         attrs_map = {}
         ignore_field_types = [
-            field_types.AutoField,
-            field_types.related.OneToOneField,
-            field_types.related.ManyToManyField,
-            field_types.related.ForeignKey,
+            models.fields.AutoField,
+            models.fields.related.OneToOneField,
+            models.fields.related.ManyToManyField,
+            models.fields.related.ForeignKey,
         ]
         ignore_attrs = []
 
@@ -29,8 +27,17 @@ class API_Model(models.Model):
 
         return json.dumps(attrs_map)
 
+    def __str__(self):
+        return str(self.__class__.__name__)
+    
+    def __repr__(self):
+        return '<{}: {}>'.format(self.__class__.__name__, self.__str__())
+
 class Category(API_Model):
-    pass
+    name = models.CharField(max_length=255, blank=True)
+
+    def __str__(self):
+        return str(self.name)
 
 class Project(API_Model):
     project_category = models.ForeignKey(Category, on_delete=models.CASCADE)
