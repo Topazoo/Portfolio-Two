@@ -3,7 +3,7 @@ import django.db.models.fields as field_types
 import json
 
 class API_Model(models.Model):
-    supported_methods = ['GET']
+    supported_methods = ['ALL']
 
     name = models.CharField(max_length=255, blank=True)
 
