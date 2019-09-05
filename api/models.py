@@ -1,5 +1,6 @@
 from django.db import models
-import json
+from django.conf import settings
+import json, os
 
 class API_Model(models.Model):
     ''' The base model for all models the API can interact with.
@@ -41,3 +42,14 @@ class Category(API_Model):
 
 class Project(API_Model):
     project_category = models.ForeignKey(Category, on_delete=models.CASCADE)
+
+class Widget(API_Model):
+    name = models.CharField(max_length=255, blank=True)
+
+    def to_json(self):
+        ''' Overload to load the template as if it were any other model '''
+
+        if self.name:
+            with open(os.path.join(settings.STATIC_ROOT, 'templates/widgets/{}.html'.format(self.name))) as template:
+                return {'name': self.name, 'template': template.read()}
+
