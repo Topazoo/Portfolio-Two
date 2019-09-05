@@ -10,7 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
-import os, ast
+import os
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -22,7 +22,7 @@ load_dotenv(os.path.join(BASE_DIR, 'portfolio/.env'))
 
 SECRET_KEY = os.environ.get("SECRET_KEY")
 DEBUG = os.environ.get("DEBUG")
-ALLOWED_HOSTS = ast.literal_eval(os.environ.get("HOSTS"))
+ALLOWED_HOSTS = os.environ.get("HOSTS")[1:-1:].replace('\"', '').split(',')
 
 # Applications
 INSTALLED_APPS = [
@@ -32,7 +32,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'mockups',
     'api',
 ]
 
