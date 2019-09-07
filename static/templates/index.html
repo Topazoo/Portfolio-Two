@@ -1,33 +1,18 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <!-- CDN INCLUDES -->
-        <!-- Angular JS -->
-        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.8/angular.min.js"></script>
-        <!-- Bootstrap -->
-        <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-        <!-- Lodash-->
-        <script data-require="lodash.js@3.8.0" data-semver="3.8.0" src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.8.0/lodash.js"></script>
-        
-        <!-- ANGULAR CORE -->
-        <!-- ng-modules -->
-        <script src="resources/js/modules/ng-modules.js"></script>
-        <!-- ng-route -->
-        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.8/angular-route.js"></script>
-        <!-- routing-module -->
-        <script src="resources/js/modules/routing-module.js"></script>
-        <!-- Utility Functions -->
-        <script src="resources/js/utilities.js"></script>
-
-        <!-- BASE STYLESHEET -->
-        <link rel="stylesheet" href="resources/css/index.css"/>
-
-        <!-- WIDGETS -->
-        <script src="resources/widgets/sidebar/sidebar.js"></script>
-        
+        <!-- FRAMEWORKS -->
+        {% include "includes/frameworks.html" %}
+        <!-- ANGULAR LIBRARIES -->
+        {% include "includes/libraries.html" %}
+        <!-- ANGULAR FIXTURES -->
+        <script src="resources/js/fixtures.js"></script>
+        <!-- STYLING -->
+        {% include "includes/styling.html" %}
     </head>
     
-    <body ng-modules="RoutingModule, SidebarWidgetModule">
+    <body>
+        <header></header>
         <sidebar></sidebar>
     </body>
 

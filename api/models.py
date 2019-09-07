@@ -36,6 +36,7 @@ class API_Model(models.Model):
 
 class Category(API_Model):
     name = models.CharField(max_length=255, blank=True)
+    icon = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
         return str(self.name)
@@ -50,6 +51,6 @@ class Widget(API_Model):
         ''' Overload to load the template as if it were any other model '''
 
         if self.name:
-            with open(os.path.join(settings.STATIC_ROOT, 'templates/widgets/{}.html'.format(self.name))) as template:
+            with open(os.path.join(settings.STATIC_ROOT, 'widgets/{}/{}.html'.format(self.name, self.name))) as template:
                 return {'name': self.name, 'template': template.read()}
 
