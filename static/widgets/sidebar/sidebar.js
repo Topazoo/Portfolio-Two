@@ -1,1 +1,0 @@
-widget_directive_factory('sidebar', [{'model': 'category'}]);
