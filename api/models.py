@@ -51,6 +51,6 @@ class Widget(API_Model):
         ''' Overload to load the template as if it were any other model '''
 
         if self.name:
-            with open(os.path.join(settings.STATIC_ROOT, 'widgets/{}/{}.html'.format(self.name, self.name))) as template:
+            with open(os.path.join(settings.STATIC_ROOT, 'widgets/{}.html'.format(self.name, self.name))) as template:
                 return {'name': self.name, 'template': template.read()}
 

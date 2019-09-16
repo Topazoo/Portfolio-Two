@@ -1,25 +1,26 @@
 // Library for interacting with the server's API
-
-var API = {
-    GET: function($http, params, callback, key) {
+angular.module('API_Library', []).service('API', ['$http', function ($http) { 
+    this.GET = function({url, params, callback, response_data_path}) {
         /**
             Simplifies the boilerplate code necessary to send an AngularJS GET request to the server.
             IMPORTANT: Since requests are asynchronous, function passes the returned response to a
             callback function when received and DOES NOT return the response.
            
             --> $http - The AngularJS HTTP serviced passed from the controller sending the request.
+            --> url - The url to send the GET request to.
             --> params - A map of parameters to send with the request (e.g. {'model': 'mymodel'}).
             --> callback - The function to call when a response from the server is received. *The passed
                            callback function MUST specify a response parameter (e.g. func(response){})*.
-            --> key - A dot seperated path to specify a partial chunk of the response to send to the callback 
-                      (e.g. 'model.name' to access the sub-value name of the value model in the response).
+            --> response_data_path - A dot seperated path to specify a partial chunk of the response to send to the callback 
+                                     instead of the whole response (e.g. 'model.name' to access the sub-value name 
+                                     of the value model in the response).
         **/
     
-        $http({ url: '/api/',  method: "GET",  params: params })
-        .then((! key) ? callback : function(response) { API.parse_response(response, key, callback); });
-    },
+        $http({ url: (url) ? url : Fixtures.settings.default_api_url, method: "GET",  params: params })
+        .then((! response_data_path) ? callback : (response) => API.parse_response(response, response_data_path, callback));
+    };
     
-    parse_response: function(response, key, callback) {
+    this.parse_response = function(response, key, callback) {
         /**
             Handles parsing the JSON response for the specified value or sub-value.
            
@@ -30,14 +31,12 @@ var API = {
                            callback function MUST specify a response parameter (e.g. func(response){})*.
         **/
     
-        key.split('.').forEach(function(path) { 
-            response = (Array.isArray(response[path])) ? API.fix_json_list(response[path]) : response[path]; 
-        });
+        key.split('.').forEach((path) => response = (Array.isArray(response[path])) ? API.fix_json_list(response[path]) : response[path]);
     
         callback(response);
-    },
+    };
     
-    fix_json_list: function(json_list) {
+    this.fix_json_list = function(json_list) {
         /**
             Fixes nested JSON in lists (if it is in string form). Fixes occur on-demand by either calling function
             with a list of JSON in string form, or when a parsing a response in parse_response().
@@ -47,8 +46,6 @@ var API = {
             <-- List<Object> A list of containing the parsed JSON objects.
         **/
     
-        try {
-            return json_list.map(JSON.parse);
-        } catch (e) { return json_list; }
-    }
-};
+        try { return json_list.map(JSON.parse); } catch (e) { return json_list; }
+    };
+}]);
