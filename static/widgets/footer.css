@@ -1,0 +1,10 @@
+
+footer {
+    background-color: #dadee1;
+    padding: 20px;
+}
+
+footer .filler {
+	line-height: 200px;
+	border: 1px dashed rgba(190, 196, 202, 0.9);
+}

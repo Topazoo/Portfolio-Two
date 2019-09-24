@@ -5,15 +5,20 @@
         {% include "includes/frameworks.html" %}
         <!-- ANGULAR LIBRARIES -->
         {% include "includes/libraries.html" %}
-        <!-- ANGULAR FIXTURES -->
-        <script src="resources/js/fixtures.js"></script>
         <!-- STYLING -->
         {% include "includes/styling.html" %}
     </head>
-    
     <body>
+        <sidebar 
+                ng-controller="Sidebar"
+                ng-class="getState()"
+                ng-mouseenter="hovered=true"
+                ng-mouseleave="hovered=false">
+        </sidebar>
+        <div>
         <header></header>
-        <sidebar></sidebar>
+        <page></page>
+        <footer></footer>
+        </div>
     </body>
-
 </html>

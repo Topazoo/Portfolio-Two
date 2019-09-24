@@ -1,4 +1,16 @@
-.sidebar {
+
+sidebar {
+    height: 100%;
+    overflow: hidden;
+
+    /*  Prevents Flickering  */
+    backface-visibility: hidden;
+	-webkit-backface-visibility: hidden;
+	-moz-backface-visibility: hidden;
+    -ms-backface-visibility: hidden;
+}
+
+#sidebar_content {
     padding-top: 160px;
     position: fixed;
     top: 0;
@@ -6,20 +18,15 @@
     background-color: #202020;
     color: white;
     overflow: hidden;
-    transition: width .3s ease;
-    box-shadow: 4px 7px 10px rgba(0,0,0,.4);
-    text-align: center;
-    display: inline-block;
+    box-shadow: 4px 7px 10px rgba(0,.4);
+
+	left: 0;
+	margin: 0;
 }
 
-.sidebar:hover {
-    width: 30%;
-    display: inline-block;
-}
-  
+
 .sidebar_item {
     position: relative;
-    transition: all .3s ease;
     cursor: pointer;
 }
 
@@ -29,16 +36,8 @@
 }
 
 .sidebar_item > p {
-    display: none;
-    font-size: 30px;
-}
-
-.sidebar_item:hover > p {
     display: inline-block;
-}
-
-.sidebar_item:hover > i {
-    display: inline-block;
+    font-size: 25px;
 }
 
 .sidebar_item > p:after {
@@ -57,4 +56,56 @@
     opacity: 1;
 }
 
-  
+.sidebar_icon {
+    padding: 5px;
+}
+
+
+sidebar ~ * {
+	-webkit-transform: translate(50px);
+	-moz-transform: translate(50px);
+	transform: translate(50px);
+}
+
+sidebar.open ~ * {
+	-webkit-transform: translate(270px);
+	-moz-transform: translate(270px);
+	transform: translate(270px);
+
+    animation: slideOut .4s ease-in-out;
+}
+
+sidebar.closed ~ * { 
+    -webkit-transform: translate(50px);
+	-moz-transform: translate(50px);
+	transform: translate(50px);
+    
+    animation: slideIn .4s ease-in-out; 
+}
+
+@keyframes slideIn {
+    0%    {transform: translate(270px);}
+	100%  {transform: translate(50px);}
+}
+@-webkit-keyframes slideIn {
+    0%      {-webkit-transform: translate(270px);}
+	100%    {-webkit-transform: translate(50px);}
+}
+@-moz-keyframes slideIn {
+	0%      {-moz-transform: translate(270px);}
+	100%    {-moz-transform: translate(50px);}
+}
+
+@keyframes slideOut {
+	0%      {transform: translate(50px);}
+	100%    {transform: translate(270px);}
+}
+@-webkit-keyframes slideOut {
+	0%      {-webkit-transform: translate(50px);}
+	100%    {-webkit-transform: translate(270px);}
+}
+@-moz-keyframes slideOut {
+	0%      {-moz-transform: translate(50px);}
+	100%    {-moz-transform: translate(270px);}
+}
+
