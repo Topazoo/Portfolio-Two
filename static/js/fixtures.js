@@ -16,7 +16,7 @@
 var Fixtures = {
 
     modules: [
-
+        'Animation_Library'
     ],
 
     widgets: [ 
@@ -27,6 +27,8 @@ var Fixtures = {
             template:           The widget template in string form (Optional - if template_url is specified).
             template_data_path: A dot-seperated path to use part of the API response JSON as template. 
                                 (e.g. data.templates.navbar). (Optional - defaults to <<settings.default_template_data_path>>)
+            directive_template: The template to use in the AngularJS directive (Optional.)
+
             models:             A list of objects to fetch from one or more APIs to compile the template with.
             [
                 {
@@ -38,6 +40,7 @@ var Fixtures = {
                                         (e.g. data.authors.Stephen_King). (Optional - defaults to <<settings.default_models_data_path>>)
                 }
             ],
+
             models_override:   A list of pre-fetched objects to compile the template with.
             [ 
                 {
@@ -52,12 +55,31 @@ var Fixtures = {
         }, 
     */
         {
-            name: 'header',
+            tag: 'header',
+            api_template: {
+                params: {'model': 'widget', 'filter': 'name:header'}
+            }
+            
         },
 
         {
-            name: 'sidebar',
-            models: [{'model': 'category', 'scope_key': 'categories'}],
+            tag: 'sidebar',
+            api_models: [{'model': 'category', 'scope_key': 'categories'}],
+            api_template: {
+                params: {'model': 'widget', 'filter': 'name:sidebar'}
+            }
+        },
+        {
+            tag: 'page',
+            api_template: {
+                params: {'model': 'widget', 'filter': 'name:page'}
+            }
+        },
+        {
+            tag: 'footer',
+            api_template: {
+                params: {'model': 'widget', 'filter': 'name:footer'}
+            }
         },
     ],
 
@@ -67,8 +89,9 @@ var Fixtures = {
 
     settings: {
         default_api_url: '/api/',
-        default_models_data_path: 'data.models',
-        default_model_scope_key: 'models+',
+        default_template_url: '/api/',
+        default_model_data_path: 'data.models',
+        default_model_scope_key: 'extra',
         default_template_data_path: 'data.models.0.template',
         DOM_attach_point: 'body',
     }

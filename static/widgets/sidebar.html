@@ -1,6 +1,10 @@
-<div class="sidebar">
-    <div ng-repeat="c in categories track by $index" ng-mouseover="sb_hover=true" class="sidebar_item">
-        <i class="material-icons-round">{{ c.icon }}</i>
-        <p>{{ c.name }}</p>
+<div id="sidebar_content">
+    <div ng-repeat="c in categories track by $index">
+        <div class="sidebar_item">
+            <i class="material-icons-round sidebar_icon">{{ c.icon }}</i>
+            <p>{{ c.name }}</p>
+        </div>
     </div>
 </div>
+
+	
